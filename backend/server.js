@@ -43,4 +43,8 @@ app.delete('/api/payments/:id', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
+<<<<<<< HEAD
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+=======
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+>>>>>>> ccbcc8cfa2015c912061fe9fe4bc4cbe2c1ec4ed
