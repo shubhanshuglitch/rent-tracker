@@ -4,11 +4,21 @@ const { createClient } = require('@supabase/supabase-js');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());
+
+// FIXED: Corrected the CORS origin syntax
+app.use(cors({
+    origin: 'https://rent-tracker-eight-theta.vercel.app' 
+}));
+
 app.use(express.json());
 
 // Initialize Supabase Client
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+// NEW: Added a root route so you don't get "Cannot GET /" 
+app.get('/', (req, res) => {
+    res.send('Rent Tracker API is Live!');
+});
 
 // GET all payments
 app.get('/api/payments', async (req, res) => {
