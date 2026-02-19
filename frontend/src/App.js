@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
 
+// 1. UPDATE THIS URL with your live Render backend link
+const API_URL = "https://rent-tracker-rmhk.onrender.com"; 
+
 const PROPERTIES_LIST = ["351, Sector 56", "2628, Gali 26", "Gali 40, Sanjay Colony"];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -21,13 +24,18 @@ function App() {
     loadData();
     document.body.className = darkMode ? 'dark-mode' : '';
     localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+    
+    // Dynamically update the browser tab title
+    document.title = "Rentals."; 
   }, [darkMode]);
 
   const loadData = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/payments');
-      setPayments(res.data);
-    } catch (err) { console.error(err); }
+      const res = await axios.get(`${API_URL}/api/payments`);
+      setPayments(res.data || []);
+    } catch (err) { 
+      console.error("Error fetching data:", err); 
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -45,13 +53,14 @@ function App() {
     };
     
     try {
-      await axios.post('http://localhost:5000/api/payments', payload);
+      await axios.post(`${API_URL}/api/payments`, payload);
       setFormData({ ...formData, tenant_name: '', base_rent: '', electricity_units: '', electricity_amount: '' });
       loadData();
-    } catch (err) { alert("Error saving record."); }
+    } catch (err) { 
+      alert("Error saving record. Check if backend is awake."); 
+    }
   };
 
-  // Professional Receipt Generator
   const printReceipt = (p) => {
     const win = window.open('', '_blank');
     win.document.write(`
@@ -75,9 +84,9 @@ function App() {
             <div class="row"><span>Tenant:</span> <strong>${p.tenant_name}</strong></div>
             <div class="row"><span>Date:</span> <span>${p.date}</span></div>
             <div class="row"><span>Period:</span> <span>${p.month} ${p.date.split('-')[0]}</span></div>
-            <div class="row" style="margin-top:20px;"><span>Base Rent:</span> <span>₹${p.base_rent}</span></div>
-            <div class="row"><span>Electricity (${p.electricity_units} Units):</span> <span>₹${p.electricity_amount}</span></div>
-            <div class="row total"><span>Total Paid:</span> <span>₹${p.total_amount}</span></div>
+            <div class="row" style="margin-top:20px;"><span>Base Rent:</span> <span>₹${p.base_rent || 0}</span></div>
+            <div class="row"><span>Electricity (${p.electricity_units || 0} Units):</span> <span>₹${p.electricity_amount || 0}</span></div>
+            <div class="row total"><span>Total Paid:</span> <span>₹${p.total_amount || 0}</span></div>
             <p style="text-align:center; font-size:11px; color:#86868b; margin-top:30px;">Generated via Rentals. Dashboard</p>
           </div>
         </body>
@@ -87,17 +96,22 @@ function App() {
     win.print();
   };
 
-  const formatCurrency = (v) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(v || 0);
+  const formatCurrency = (v) => new Intl.NumberFormat('en-IN', { 
+    style: 'currency', 
+    currency: 'INR', 
+    maximumFractionDigits: 0 
+  }).format(v || 0);
 
   const getFiltered = (propName = null) => {
     let d = propName ? payments.filter(p => p.property_name === propName) : payments;
     if (selectedMonth !== 'All Months') d = d.filter(p => p.month === selectedMonth);
-    if (selectedYear !== 'All Years') d = d.filter(p => p.date.startsWith(selectedYear));
+    if (selectedYear !== 'All Years') d = d.filter(p => p.date && p.date.startsWith(selectedYear));
     return d;
   };
 
-  const grandTotal = getFiltered().reduce((s, i) => s + (i.total_amount || 0), 0);
-  const uniqueYears = ['All Years', ...new Set(payments.map(p => p.date.split('-')[0]))].sort().reverse();
+  // Ensure s + i.total_amount handles potential null values to prevent NaN
+  const grandTotal = getFiltered().reduce((s, i) => s + (parseFloat(i.total_amount) || 0), 0);
+  const uniqueYears = ['All Years', ...new Set(payments.map(p => p.date ? p.date.split('-')[0] : ""))].filter(y => y !== "").sort().reverse();
 
   return (
     <div className="App">
@@ -140,7 +154,7 @@ function App() {
       <div className="tables-container">
         {PROPERTIES_LIST.map(prop => {
           const filtered = getFiltered(prop);
-          const propTotal = filtered.reduce((s, i) => s + (i.total_amount || 0), 0);
+          const propTotal = filtered.reduce((s, i) => s + (parseFloat(i.total_amount) || 0), 0);
           return (
             <div key={prop} className="property-card">
               <div className="prop-label">{prop}</div>
@@ -150,14 +164,19 @@ function App() {
                   <div key={p.id} className="apple-list-item">
                     <div>
                       <div className="tenant-name">{p.tenant_name}</div>
-                      <div className="sub-text">Rent: ₹{p.base_rent} | Elec: ₹{p.electricity_amount}</div>
+                      <div className="sub-text">Rent: ₹{p.base_rent || 0} | Elec: ₹{p.electricity_amount || 0} ({p.electricity_units || 0} U)</div>
                       <div className="sub-text">{p.date} • {p.month}</div>
                     </div>
                     <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
                       <span className="amount-small">{formatCurrency(p.total_amount)}</span>
                       <button className="receipt-btn" onClick={() => printReceipt(p)}>Slip</button>
                       <button className="del-btn-minimal" onClick={async () => {
-                        if(window.confirm("Delete?")) { await axios.delete(`http://localhost:5000/api/payments/${p.id}`); loadData(); }
+                        if(window.confirm("Delete?")) { 
+                          try {
+                            await axios.delete(`${API_URL}/api/payments/${p.id}`); 
+                            loadData(); 
+                          } catch(err) { alert("Delete failed."); }
+                        }
                       }}>×</button>
                     </div>
                   </div>
