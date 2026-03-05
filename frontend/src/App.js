@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Login from './components/Login';
 import './App.css';
@@ -22,39 +22,40 @@ function App() {
     month: MONTHS[new Date().getMonth()], date: new Date().toISOString().split('T')[0] 
   });
 
-  useEffect(() => {
-    if (token) loadData();
-    document.body.className = darkMode ? 'dark-mode' : '';
-    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
-    
-    // Dynamically update the browser tab title
-    document.title = "Rentals."; 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [darkMode, token]);
-
-  const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
-
-  const loadData = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/api/payments`, authHeaders);
-      setPayments(res.data || []);
-    } catch (err) { 
-      if (err.response && err.response.status === 401) handleLogout();
-      console.error("Error fetching data:", err); 
-    }
-  };
-
-  const handleLogin = (accessToken) => {
-    setToken(accessToken);
-  };
-
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user_email');
     setToken(null);
     setPayments([]);
+  }, []);
+
+  const loadData = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/payments`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPayments(res.data || []);
+    } catch (err) { 
+      if (err.response && err.response.status === 401) handleLogout();
+      console.error("Error fetching data:", err); 
+    }
+  }, [token, handleLogout]);
+
+  useEffect(() => {
+    if (token) loadData();
+    document.body.className = darkMode ? 'dark-mode' : '';
+    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+    document.title = "Rentals.";
+  }, [darkMode, token, loadData]);
+
+  const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
+
+  const handleLogin = (accessToken) => {
+    setToken(accessToken);
   };
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
