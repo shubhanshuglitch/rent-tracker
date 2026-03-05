@@ -29,6 +29,7 @@ function App() {
     
     // Dynamically update the browser tab title
     document.title = "Rentals."; 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [darkMode, token]);
 
   const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
