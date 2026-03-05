@@ -53,3 +53,103 @@ body { background: var(--apple-bg); color: var(--apple-text); font-family: -appl
 }
 
 .ledger-scroll { max-height: 250px; overflow-y: auto; }
+
+/* ---- Login / Signup ---- */
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+.login-card {
+  background: var(--apple-card);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 50px 40px;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+}
+.login-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+.login-subtitle {
+  color: #86868b;
+  font-size: 15px;
+  margin: 0 0 30px;
+}
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.login-input {
+  background: rgba(128,128,128,0.1);
+  border: none;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 15px;
+  color: var(--apple-text);
+  outline: none;
+  transition: box-shadow 0.2s;
+}
+.login-input:focus {
+  box-shadow: 0 0 0 3px rgba(0,113,227,0.3);
+}
+.login-btn {
+  background: var(--apple-blue);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  margin-top: 4px;
+}
+.login-btn:hover { opacity: 0.85; }
+.login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.login-error {
+  color: #ff3b30;
+  font-size: 13px;
+  margin-top: 14px;
+}
+.login-message {
+  color: #34c759;
+  font-size: 13px;
+  margin-top: 14px;
+}
+.login-toggle {
+  color: #86868b;
+  font-size: 14px;
+  margin-top: 24px;
+}
+.toggle-btn {
+  background: none;
+  border: none;
+  color: var(--apple-blue);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+}
+.toggle-btn:hover { text-decoration: underline; }
+
+/* Logout button */
+.logout-btn {
+  background: rgba(255,59,48,0.1);
+  color: #ff3b30;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.logout-btn:hover { background: rgba(255,59,48,0.2); }

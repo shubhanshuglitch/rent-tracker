@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Login from './components/Login';
 import './App.css';
 
 // 1. UPDATE THIS URL with your live Render backend link
@@ -9,6 +10,7 @@ const PROPERTIES_LIST = ["351, Sector 56", "2628, Gali 26", "Gali 40, Sanjay Col
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 function App() {
+  const [token, setToken] = useState(localStorage.getItem('access_token'));
   const [payments, setPayments] = useState([]);
   const [darkMode, setDarkMode] = useState(localStorage.getItem('theme') === 'dark');
   const [selectedMonth, setSelectedMonth] = useState('All Months');
@@ -21,21 +23,36 @@ function App() {
   });
 
   useEffect(() => {
-    loadData();
+    if (token) loadData();
     document.body.className = darkMode ? 'dark-mode' : '';
     localStorage.setItem('theme', darkMode ? 'dark' : 'light');
     
     // Dynamically update the browser tab title
     document.title = "Rentals."; 
-  }, [darkMode]);
+  }, [darkMode, token]);
+
+  const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
 
   const loadData = async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/payments`);
+      const res = await axios.get(`${API_URL}/api/payments`, authHeaders);
       setPayments(res.data || []);
     } catch (err) { 
+      if (err.response && err.response.status === 401) handleLogout();
       console.error("Error fetching data:", err); 
     }
+  };
+
+  const handleLogin = (accessToken) => {
+    setToken(accessToken);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user_email');
+    setToken(null);
+    setPayments([]);
   };
 
   const handleSubmit = async (e) => {
@@ -53,7 +70,7 @@ function App() {
     };
     
     try {
-      await axios.post(`${API_URL}/api/payments`, payload);
+      await axios.post(`${API_URL}/api/payments`, payload, authHeaders);
       setFormData({ ...formData, tenant_name: '', base_rent: '', electricity_units: '', electricity_amount: '' });
       loadData();
     } catch (err) { 
@@ -115,6 +132,10 @@ function App() {
 
   return (
     <div className="App">
+      {!token ? (
+        <Login API_URL={API_URL} onLogin={handleLogin} />
+      ) : (
+      <>
       <header className="apple-header">
         <h1>Rentals.</h1>
         <div className="summary-pill">
@@ -130,6 +151,7 @@ function App() {
             {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
           <button className="apple-select" onClick={() => setDarkMode(!darkMode)}>{darkMode ? '☀️' : '🌙'}</button>
+          <button className="logout-btn" onClick={handleLogout}>Logout</button>
         </div>
       </header>
 
@@ -173,7 +195,7 @@ function App() {
                       <button className="del-btn-minimal" onClick={async () => {
                         if(window.confirm("Delete?")) { 
                           try {
-                            await axios.delete(`${API_URL}/api/payments/${p.id}`); 
+                            await axios.delete(`${API_URL}/api/payments/${p.id}`, authHeaders); 
                             loadData(); 
                           } catch(err) { alert("Delete failed."); }
                         }
@@ -186,6 +208,8 @@ function App() {
           );
         })}
       </div>
+      </>
+      )}
     </div>
   );
 }
